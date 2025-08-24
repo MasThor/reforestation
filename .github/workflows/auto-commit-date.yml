@@ -1,0 +1,82 @@
+name: Auto commit by date
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 * * * */1"  # Setiap jam pada menit ke-0
+  workflow_dispatch:  # Tambahkan ini untuk bisa trigger manual
+
+jobs:
+  auto_commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Ini penting untuk memberi izin push
+    
+    steps:
+      - name: DEBUG 
+        run: echo "::debug::Ref = ${{github.ref}}"
+      
+      - name: Checkout code
+        uses: actions/checkout@v4  # Upgrade ke v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # Gunakan token dengan izin write
+          fetch-depth: 0
+
+      - name: Setup Git and Commit changes Multi
+        run: |
+          git config --local user.email "thaariqprs97@gmail.com"
+          git config --local user.name "MasThor"
+          
+          # Array pesan commit acak
+
+          commit_messages=(
+            "chore(bot): 😂 commit acak"
+            "chore(bot): 😱 daily update"
+            "chore(bot): 👿 code maintenance"
+            "chore(bot): 💩 cleanup task"
+            "chore(bot): 🙏 improvement"
+            "chore(bot): 🙈 dependency update"
+            "chore(bot): 🐐 optimization"
+            "chore(bot): 🤖 automated commit"
+            "chore(bot): 🟩 refactoring"
+            "chore(bot): 👻 bug fix"
+          )
+          
+          for((m=1;m<=12;m++))
+          do 
+                      
+            for ((i=1; i<=30; i++))
+            do
+              # Update file dengan timestamp unik
+
+              RANDOM_COUNT=$((1 + RANDOM % 9))
+
+              for ((x=1;x<=RANDOM_COUNT; x++))
+              do
+                echo "Commit ke-$i - $x pada $(date '+%Y-%m-%d %H:%M:%S')" > TEST_TANGGAL
+                git add TEST_TANGGAL
+                
+                # Pilih pesan acak
+                random_index=$((RANDOM % ${#commit_messages[@]}))
+                commit_message="${commit_messages[$random_index]}"
+                
+                # Buat commit
+                git commit -m "Commit tgl-$i - $m ke $x  $commit_message" --date="2024-$m-$i 10:00:00" || echo "No changes to commit"
+                
+                # Tunggu sebentar antara commit
+                sleep 1
+              done
+            done
+
+          done
+
+          
+          
+          # Pilih pesan acak
+          
+      - name: Push changes
+        run: |
+          git pull origin main --rebase
+          git push origin main
