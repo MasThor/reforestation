@@ -44,7 +44,7 @@ jobs:
             "chore(bot): 👻 bug fix"
           )
           
-          for((m=1;m<=8;m++))
+          for((m=1;m<=2;m++))
           do 
                       
             for ((i=1; i<=30; i++))
