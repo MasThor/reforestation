@@ -44,7 +44,7 @@ jobs:
             "chore(bot): 👻 bug fix"
           )
           
-          for((m=1;m<=12;m++))
+          for((m=1;m<=8;m++))
           do 
                       
             for ((i=1; i<=30; i++))
@@ -63,7 +63,7 @@ jobs:
                 commit_message="${commit_messages[$random_index]}"
                 
                 # Buat commit
-                git commit -m "Commit tgl-$i - $m ke $x  $commit_message" --date="2024-$m-$i 10:00:00" || echo "No changes to commit"
+                git commit -m "Commit tgl-$i - $m ke $x  $commit_message" --date="2025-$m-$i 10:00:00" || echo "No changes to commit"
                 
                 # Tunggu sebentar antara commit
                 sleep 1
