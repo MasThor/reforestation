@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 */2 * * *"  # Setiap jam pada menit ke-0
+    - cron: "0 */3 * * *"  # Setiap jam pada menit ke-0
   workflow_dispatch:  # Tambahkan ini untuk bisa trigger manual
 
 jobs:
