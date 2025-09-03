@@ -5,23 +5,23 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 */3 * * *"  # Setiap jam pada menit ke-0
-  workflow_dispatch:  # Tambahkan ini untuk bisa trigger manual
+    - cron: "0 */4 * * *" 
+  workflow_dispatch: 
 
 jobs:
   auto_commit:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Ini penting untuk memberi izin push
+      contents: write
     
     steps:
       - name: DEBUG 
         run: echo "::debug::Ref = ${{github.ref}}"
       
       - name: Checkout code
-        uses: actions/checkout@v4  # Upgrade ke v4
+        uses: actions/checkout@v4  
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}  # Gunakan token dengan izin write
+          token: ${{ secrets.GITHUB_TOKEN }}  
           fetch-depth: 0
 
       - name: Setup Git and Commit changes Multi
@@ -32,16 +32,16 @@ jobs:
           # Array pesan commit acak
 
           commit_messages=(
-            "chore(bot): 😂 commit acak"
-            "chore(bot): 😱 daily update"
-            "chore(bot): 👿 code maintenance"
-            "chore(bot): 💩 cleanup task"
-            "chore(bot): 🙏 improvement"
-            "chore(bot): 🙈 dependency update"
-            "chore(bot): 🐐 optimization"
-            "chore(bot): 🤖 automated commit"
-            "chore(bot): 🟩 refactoring"
-            "chore(bot): 👻 bug fix"
+            "😂 what are you looking for on here ?"
+            "😱 what are you looking for on here ?"
+            "👿 what are you looking for on here ?"
+            "💩 what are you looking for on here ?"
+            "🙏 what are you looking for on here ?"
+            "🙈 what are you looking for on here ?"
+            "🐐 what are you looking for on here ?"
+            "🤖 what are you looking for on here ?"
+            "🟩 what are you looking for on here ?"
+            "👻 what are you looking for on here ?"
           )
           
 
