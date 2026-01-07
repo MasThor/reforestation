@@ -1,0 +1,60 @@
+name: Auto commit savage mode 😈
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # 1x sehari (UTC)
+  workflow_dispatch:
+
+jobs:
+  auto_commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Git & Random Commit
+        run: |
+          git config user.email "thaariqprs97@gmail.com"
+          git config user.name "MasThor"
+
+          # -------------------------
+          # RANDOM DELAY (0 - 6 JAM)
+          # -------------------------
+          MAX_SLEEP=$((6 * 60 * 60)) # 6 jam
+          SLEEP_TIME=$((RANDOM % MAX_SLEEP))
+
+          echo "😈 Sleeping for $SLEEP_TIME seconds..."
+          sleep $SLEEP_TIME
+
+          # -------------------------
+          # RANDOM COMMIT MESSAGE
+          # -------------------------
+          commit_messages=(
+            "😂 what are you looking for on here ?"
+            "😱 what are you looking for on here ?"
+            "👿 what are you looking for on here ?"
+            "💩 what are you looking for on here ?"
+            "🙏 what are you looking for on here ?"
+            "🙈 what are you looking for on here ?"
+            "🐐 what are you looking for on here ?"
+            "🤖 what are you looking for on here ?"
+            "🟩 what are you looking for on here ?"
+            "👻 what are you looking for on here ?"
+          )
+
+          echo "Auto commit at $(date)" > LAST_CHANGES
+          git add LAST_CHANGES
+
+          random_index=$((RANDOM % ${#commit_messages[@]}))
+          git commit -m "${commit_messages[$random_index]}" || echo "No changes"
+
+      - name: Push
+        run: |
+          git pull --rebase origin main
+          git push origin main
