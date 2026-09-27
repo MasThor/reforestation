@@ -1,67 +1,104 @@
-name: Auto commit by random time
+name: Dynamic Daily PR and Merge
 
 on:
   schedule:
-    - cron: "0 * * * *"   # setiap 1 jam
+    # Berjalan setiap 3 jam sekali
+    - cron: "0 */3 * * *"
   workflow_dispatch:
 
 jobs:
-  auto_commit:
+  auto_pr_merge:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Git and Random Commit
+      - name: Setup Git Identity
         run: |
-          git config --local user.email "thaariqprs97@gmail.com"
-          git config --local user.name "MasThor"
+          git config --global user.email "thaariqprs97@gmail.com"
+          git config --global user.name "MasThor"
 
-          # ===== RANDOM DECISION =====
-          # 0 = skip, 1 = run
-          RUN=$((RANDOM % 3))   # ~33% chance jalan
+      - name: Run Dynamic PR Workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY=$(date -u '+%Y-%m-%d')
+          TODAY_NUM=$(date -u '+%Y%m%d')
 
-          if [ "$RUN" -ne 1 ]; then
-            echo "⏭ Skip this hour (random decision)"
+          # 1. Target jumlah PR hari ini (Rentang: 1 s.d. 4 PR per hari)
+          HASH_PR=$(echo "${TODAY_NUM}-PR" | cksum | awk '{print $1}')
+          TARGET_PRS=$(( (HASH_PR % 4) + 1 ))
+
+          # 2. Cek berapa PR yang sudah dimerge oleh bot hari ini
+          # Menghitung PR closed/merged hari ini via gh cli
+          PRS_TODAY=$(gh pr list --state merged --author "@me" --search "merged:$TODAY" --limit 50 --json id -q '. | length')
+
+          echo "📅 Tanggal: $TODAY"
+          echo "🎯 Target PR hari ini: $TARGET_PRS"
+          echo "📊 PR yang sudah selesai hari ini: $PRS_TODAY"
+
+          if [ "$PRS_TODAY" -ge "$TARGET_PRS" ]; then
+            echo "✅ Kuota PR hari ini sudah tercapai. Selesai."
             exit 0
           fi
 
-          # ===== COMMIT MESSAGES =====
-          commit_messages=(
-            "😂 what are you looking for on here ?"
-            "😱 what are you looking for on here ?"
-            "👿 what are you looking for on here ?"
-            "💩 what are you looking for on here ?"
-            "🙏 what are you looking for on here ?"
-            "🙈 what are you looking for on here ?"
-            "🐐 what are you looking for on here ?"
-            "🤖 what are you looking for on here ?"
-            "🟩 what are you looking for on here ?"
-            "👻 what are you looking for on here ?"
+          # 3. 50% Peluang jalan pada jam ini agar persebaran jam acak
+          if [ $((RANDOM % 2)) -ne 0 ]; then
+            echo "⏭ Lewati jam ini secara acak agar riwayat terlihat organik."
+            exit 0
+          fi
+
+          # 4. Tentukan jumlah commit acak di dalam PR ini (1 s.d. 3 commit per PR)
+          COMMITS_IN_THIS_PR=$(( (RANDOM % 3) + 1 ))
+          BRANCH_NAME="feature/patch-${TODAY_NUM}-$(date -u '+%H%M%S')"
+
+          echo "🚀 Menyiapkan branch '$BRANCH_NAME' dengan $COMMITS_IN_THIS_PR commit..."
+
+          git checkout -b "$BRANCH_NAME"
+
+          # 5. Loop membuat sejumlah commit acak
+          messages=(
+            "refactor: optimize internal sync routines"
+            "chore: periodic background state refresh"
+            "docs: update auto-generated telemetry notes"
+            "fix: minor edge-case in state evaluation"
+            "perf: adjust latency threshold parameters"
+            "chore: routine dependency heartbeat"
           )
 
-          random_index=$((RANDOM % ${#commit_messages[@]}))
-          commit_message="${commit_messages[$random_index]}"
+          for ((c=1; c<=COMMITS_IN_THIS_PR; c++)); do
+            echo "Heartbeat event at $(date -u '+%Y-%m-%d %H:%M:%S UTC') - cycle $c" >> ACTIVITY_LOG
+            git add ACTIVITY_LOG
+            
+            random_msg="${messages[$((RANDOM % ${#messages[@]}))]}"
+            git commit -m "$random_msg ($c/$COMMITS_IN_THIS_PR)"
+            sleep 1
+          done
 
-          # ===== MAKE CHANGE =====
-          echo "Updated at $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > LAST_CHANGES
-          git add LAST_CHANGES
+          # 6. Push branch fitur ke origin
+          git push origin "$BRANCH_NAME"
 
-          # ===== SAFE COMMIT =====
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
+          # 7. Buat Pull Request resmi menggunakan gh cli
+          PR_TITLE="feat(sync): routine automated integration for $TODAY"
+          PR_BODY="This PR includes $COMMITS_IN_THIS_PR maintenance commit(s) generated on $TODAY."
 
-          git commit -m "$commit_message"
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY")
 
-      - name: Push changes
-        run: |
-          git pull origin main --rebase
-          git push origin main
+          echo "🎉 PR berhasil dibuat: $PR_URL"
+
+          # 8. Otomatis Merge PR dan hapus branch remote-nya
+          # --merge mempertahankan riwayat commit individual
+          gh pr merge "$PR_URL" --merge --delete-branch
+
+          echo "✅ PR berhasil dimerge dan branch remote telah dibersihkan."
