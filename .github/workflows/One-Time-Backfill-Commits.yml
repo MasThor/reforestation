@@ -1,0 +1,69 @@
+name: One-Time Backfill Commits
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Backfill Commits from Jan 23 to Today
+        run: |
+          git config --local user.email "thaariqprs97@gmail.com"
+          git config --local user.name "MasThor"
+
+          # Tanggal mulai (23 Januari) dan tanggal hari ini
+          # Format YYYY-MM-DD
+          CURRENT_DATE="2026-01-23"
+          END_DATE=$(date -u '+%Y-%m-%d')
+
+          echo "Memulai backfill dari $CURRENT_DATE sampai $END_DATE..."
+
+          while [ "$CURRENT_DATE" != "$END_DATE" ]; do
+            # Tentukan jumlah commit acak per hari (misal 1 s.d. 6 commit)
+            NUM_COMMITS=$(( (RANDOM % 6) + 1 ))
+
+            for ((i=1; i<=NUM_COMMITS; i++)); do
+              # Tentukan jam dan menit acak
+              HOUR=$(( RANDOM % 14 + 8 )) # Antara jam 08:00 - 22:00
+              MIN=$(( RANDOM % 60 ))
+              SEC=$(( RANDOM % 60 ))
+              
+              COMMIT_DATE="${CURRENT_DATE}T$(printf "%02d:%02d:%02d" $HOUR $MIN $SEC)Z"
+
+              # Buat branch temporer
+              BRANCH_NAME="feature/patch-${CURRENT_DATE}-${i}"
+              git checkout -b "$BRANCH_NAME"
+
+              # Update file dengan tanggal tiruan
+              echo "Log entry for $COMMIT_DATE" >> ACTIVITY_LOG
+              git add ACTIVITY_LOG
+
+              # Commit dengan Git Backdate (Author & Committer Date)
+              GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" \
+                git commit -m "chore: update logs for $CURRENT_DATE [run $i]"
+
+              # Kembali ke main dan merge
+              git checkout main
+              GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" \
+                git merge --no-ff "$BRANCH_NAME" -m "Merge branch '$BRANCH_NAME' into main on $CURRENT_DATE"
+
+              git branch -D "$BRANCH_NAME"
+            done
+
+            # Maju 1 hari
+            CURRENT_DATE=$(date -I -d "$CURRENT_DATE + 1 day")
+          done
+
+          echo "Proses backfill selesai. Mengunggah ke GitHub..."
+          git pull origin main --rebase
+          git push origin main
