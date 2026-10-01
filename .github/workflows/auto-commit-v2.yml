@@ -57,11 +57,6 @@ jobs:
 
           # 4. Tentukan jumlah commit acak di dalam PR ini (1 s.d. 3 commit per PR)
           COMMITS_IN_THIS_PR=$(( (RANDOM % 3) + 1 ))
-          BRANCH_NAME="feature/patch-${TODAY_NUM}-$(date -u '+%H%M%S')"
-
-          echo "🚀 Menyiapkan branch '$BRANCH_NAME' dengan $COMMITS_IN_THIS_PR commit..."
-
-          git checkout -b "$BRANCH_NAME"
 
           # 5. Loop membuat sejumlah commit acak
           messages=(
@@ -83,22 +78,6 @@ jobs:
           done
 
           # 6. Push branch fitur ke origin
-          git push origin "$BRANCH_NAME"
+          git push origin main
 
-          # 7. Buat Pull Request resmi menggunakan gh cli
-          PR_TITLE="feat(sync): routine automated integration for $TODAY"
-          PR_BODY="This PR includes $COMMITS_IN_THIS_PR maintenance commit(s) generated on $TODAY."
 
-          PR_URL=$(gh pr create \
-            --base main \
-            --head "$BRANCH_NAME" \
-            --title "$PR_TITLE" \
-            --body "$PR_BODY")
-
-          echo "🎉 PR berhasil dibuat: $PR_URL"
-
-          # 8. Otomatis Merge PR dan hapus branch remote-nya
-          # --merge mempertahankan riwayat commit individual
-          gh pr merge "$PR_URL" --merge --delete-branch
-
-          echo "✅ PR berhasil dimerge dan branch remote telah dibersihkan."
